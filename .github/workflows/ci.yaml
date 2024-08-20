@@ -49,10 +49,10 @@ jobs:
         run: poetry build
 
       - name: Run date_detection.py
-        run: poetry run python date_detection.py
+        run: poetry run python lin_py/date_detection.py
 
       - name: Run image_processing.py
-        run: poetry run python image_processing.py
+        run: poetry run python lin_py/image_processing.py
 
       - name: Run text_extraction.py
-        run: poetry run python text_extraction.py
+        run: poetry run python lin_py/text_extraction.py
