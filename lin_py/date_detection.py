@@ -1,33 +1,40 @@
 import re
-from typing import List, Pattern
+from typing import List, Tuple, Optional, Dict, Union
+import datetime
+import logging
 
 class DateDetector:
 
-    date_patterns: List[Pattern] = [
-        r'\b(\d{2}[-/\.]\d{2}[-/\.]\d{4})\b',  # Matches dates like 04/03/1980, 04-03-1980, 04.03.1980
-        r'\b(\d{2}[-/\. ]\d{2}[-/\. ]\d{4})\b',  # Matches dates like 04 03 1980
-        r'\b(\d{8})\b',  # Matches concatenated dates like 04031980
-        r'Date of Birth: ?(\d{2}[./-]\d{2}[./-]\d{4})',  # Matches 'Date of Birth: 04.03.1980'
-        r'Date of Birth: ?(\d{8})',  # Matches 'Date of Birth:01001970'
-        r'Date of Birth: ?(\d{2}[-/\. ]\d{2}[-/\. ]\d{4})',  # Matches 'Date of Birth: 04 03 1980'
-        r'\b(\d{1,2})\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+(\d{4})\b',  # Matches '14 Jan 2024'
-        r'\b(\d{1,2})\s+(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})\b'  # Matches '14 February 2024'
-    ]
+    def __init__(self, additional_patterns: Optional[List[Tuple[str, str]]] = None):
+        # Default 
+        self.date_patterns: List[Tuple[re.Pattern, str]] = [
+            (re.compile(r'\b(\d{2}[-/\.]\d{2}[-/\.]\d{4})\b'), '%d-%m-%Y'),  # DD-MM-YYYY and variations
+            (re.compile(r'\b(\d{2}[-/\. ]\d{2}[-/\. ]\d{4})\b'), '%d %m %Y'),  # DD MM YYYY
+            (re.compile(r'\b(\d{8})\b'), '%d%m%Y'),  # DDMYYYY
+            (re.compile(r'\b(\d{1,2})\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+(\d{4})\b', re.IGNORECASE), '%d %b %Y'),  # DD Month YYYY
+            (re.compile(r'\b(\d{1,2})\s+(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})\b', re.IGNORECASE), '%d %B %Y')  # DD Month YYYY full
+        ]
+
+        # Add additional user-defined patterns
+        if additional_patterns:
+            for pattern, format in additional_patterns:
+                self.date_patterns.append((re.compile(pattern), format))
+
+    def extract_dates(self, text: str) -> List[Dict[str, Union[str, bool]]]:
+        found_dates = []
+        for pattern, date_format in self.date_patterns:
+            for match in pattern.finditer(text):
+                date_str = match.group()
+                is_valid = self.validate_date(date_str, date_format)
+                found_dates.append({'date': date_str, 'pattern': pattern.pattern, 'is_valid': is_valid})
+        return found_dates
 
     @staticmethod
-    def extract_date(text: str) -> str:
-       
-        for pattern in DateDetector.date_patterns:
-            match = re.search(pattern, text, re.IGNORECASE)
-            if match:
-                return match.group()
-        return "Date not found"
-
-    @staticmethod
-    def validate_date(date_str: str) -> bool:
-        
+    def validate_date(date_str: str, date_format: str) -> bool:
         try:
-            datetime.datetime.strptime(date_str, '%d-%m-%Y')
+            datetime.datetime.strptime(date_str, date_format)
             return True
         except ValueError:
             return False
+
+
