@@ -1,0 +1,36 @@
+name: Run Flask App
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.11.0'
+        
+    - name: Install Poetry
+      run: |
+        curl -sSL https://install.python-poetry.org | python3 -       
+
+    - name: Verify Poetry installation
+      run: |
+        poetry --version
+        
+    - name: Install dependencies
+      run: |
+        poetry install
+
+    - name: Run Flask App
+      run: |
+        python -m flask run --host=0.0.0.0 & echo "::set-output name=app-url::http://localhost:5000"
+      id: flask
