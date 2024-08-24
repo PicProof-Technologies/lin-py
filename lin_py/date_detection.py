@@ -37,4 +37,8 @@ class DateDetector:
         except ValueError:
             return False
 
+    def add_date_pattern(self, pattern: str, date_format: str):
+        self.date_patterns.append((pattern, date_format))
+        self.logger.info(f"Added new date pattern: {pattern} with format {date_format}")
+
 
