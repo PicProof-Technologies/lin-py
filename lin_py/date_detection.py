@@ -4,9 +4,12 @@ import datetime
 import logging
 
 class DateDetector:
-
     def __init__(self, additional_patterns: Optional[List[Tuple[str, str]]] = None):
-        # Default 
+        # Setup logger
+        self.logger = logging.getLogger(__name__)
+        logging.basicConfig(level=logging.INFO)
+        
+        # Default date patterns
         self.date_patterns: List[Tuple[re.Pattern, str]] = [
             (re.compile(r'\b(\d{2}[-/\.]\d{2}[-/\.]\d{4})\b'), '%d-%m-%Y'),  # DD-MM-YYYY and variations
             (re.compile(r'\b(\d{2}[-/\. ]\d{2}[-/\. ]\d{4})\b'), '%d %m %Y'),  # DD MM YYYY
@@ -18,7 +21,7 @@ class DateDetector:
         # Add additional user-defined patterns
         if additional_patterns:
             for pattern, format in additional_patterns:
-                self.date_patterns.append((re.compile(pattern), format))
+                self.add_date_pattern(pattern, format)  
 
     def extract_dates(self, text: str) -> List[Dict[str, Union[str, bool]]]:
         found_dates = []
@@ -37,4 +40,7 @@ class DateDetector:
         except ValueError:
             return False
 
-
+    def add_date_pattern(self, pattern: str, date_format: str):
+        compiled_pattern = re.compile(pattern)  
+        self.date_patterns.append((compiled_pattern, date_format))
+        self.logger.info(f"Added new date pattern: {pattern} with format {date_format}")
